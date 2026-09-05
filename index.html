@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="RF Driver Pancarte">
+<meta name="theme-color" content="#f8f3e7">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<title>RF Driver — Pancarte</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f8f3e7;
+  --ink:#241f18;
+  --muted:#8a7d63;
+  --gold:#b8903f;
+  --gold-dim:#8f6f30;
+  --line:rgba(184,144,63,.55);
+  --sans:'Inter',-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
+  --serif:'EB Garamond',Georgia,"Times New Roman",serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;background:#0e0c09;color:var(--ink);font-family:var(--sans)}
+body{min-height:100vh;min-height:100dvh}
+button,input{font:inherit}
+
+.frame{
+  position:absolute;
+  top:calc(16px + env(safe-area-inset-top));right:calc(16px + env(safe-area-inset-right));
+  bottom:calc(16px + env(safe-area-inset-bottom));left:calc(16px + env(safe-area-inset-left));
+  border:1px solid var(--line);pointer-events:none;
+}
+.frame::before{
+  content:'';position:absolute;inset:6px;border:1px solid rgba(184,144,63,.28);
+}
+
+.divider{display:flex;align-items:center;gap:14px;width:100%}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--line)}
+.divider-dot{width:5px;height:5px;background:var(--gold);transform:rotate(45deg);flex:0 0 auto}
+
+/* ---------- écran de saisie ---------- */
+.setup{
+  min-height:100vh;min-height:100dvh;position:relative;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:calc(30px + env(safe-area-inset-top)) 30px calc(30px + env(safe-area-inset-bottom));
+  background:var(--bg);
+}
+.card{width:min(400px,100%);text-align:center}
+.header-line{display:flex;align-items:center;justify-content:center;gap:18px}
+.logo{display:block;width:min(64px,12vw);height:auto;margin:0}
+.brand{
+  font-family:var(--serif);font-weight:700;
+  font-size:clamp(44px,8.5vw,70px);letter-spacing:.02em;margin:0;
+}
+.header-divider{max-width:min(56vw,440px);margin:16px auto 26px}
+.gold-grad{
+  background:linear-gradient(135deg,#ecd39a 0%,var(--gold) 45%,var(--gold-dim) 75%,#ecd39a 100%);
+  -webkit-background-clip:text;background-clip:text;color:var(--gold-dim);
+}
+@supports (-webkit-background-clip:text) or (background-clip:text){.gold-grad{-webkit-text-fill-color:transparent}}
+.logo-mark{width:160px;height:160px;flex:0 0 auto}
+.logo-mark .letter-r{font-family:var(--serif);font-weight:700;fill:url(#goldGrad)}
+.logo-mark .letter-f{font-family:var(--serif);font-weight:600;fill:url(#goldGrad);
+  paint-order:stroke;stroke:var(--bg);stroke-width:6px;stroke-linejoin:round}
+
+.field{margin-bottom:24px;text-align:left}
+.label{display:block;font-family:var(--serif);font-style:italic;font-size:15px;color:var(--muted);margin:0 0 10px}
+
+.seg{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid rgba(36,31,24,.16)}
+.seg-btn{position:relative;height:44px;border:0;background:transparent;
+  color:var(--muted);font-family:var(--serif);font-size:17px;transition:color .25s}
+.seg-btn::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:2px;
+  background:var(--gold);transform:scaleX(0);transition:transform .25s ease}
+.seg-btn.active{color:var(--ink)}
+.seg-btn.active::after{transform:scaleX(1)}
+
+.input-wrap{border-bottom:1px solid rgba(36,31,24,.16);transition:border-color .25s}
+.input-wrap:focus-within{border-color:var(--gold)}
+input{width:100%;height:52px;border:0;background:transparent;color:var(--ink);
+  padding:0 2px;font-family:var(--serif);font-size:22px;letter-spacing:.03em;outline:none}
+input::placeholder{color:#c2b79f}
+
+.primary{
+  width:100%;height:54px;border:0;border-radius:2px;margin-top:14px;
+  background:var(--ink);color:var(--bg);
+  font-family:var(--serif);font-weight:600;font-size:16px;letter-spacing:.1em;
+  transition:opacity .2s ease;
+}
+.primary:active{opacity:.85}
+.hint{color:var(--muted);font-size:12px;margin-top:20px;line-height:1.6;font-style:italic;font-family:var(--serif)}
+
+/* ---------- pancarte plein écran ---------- */
+.sign{
+  position:fixed;inset:0;overflow:hidden;
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+  padding:calc(30px + env(safe-area-inset-top)) 30px calc(26px + env(safe-area-inset-bottom));
+  background:var(--bg);
+  opacity:0;pointer-events:none;transition:opacity .5s ease;
+}
+.sign.show{opacity:1;pointer-events:auto}
+
+.sign-top{flex:0 0 auto;display:flex;flex-direction:column;align-items:center}
+.sign-logo{width:min(64px,12vw);height:auto;object-fit:contain}
+.sign-site{
+  font-family:var(--serif);font-weight:700;
+  font-size:clamp(44px,8.5vw,70px);letter-spacing:.02em;
+}
+
+.name-wrap{width:100%;flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px}
+.name-wrap .divider{max-width:min(70vw,560px);flex:0 0 auto}
+
+.client{
+  font-family:var(--serif);font-weight:600;line-height:.95;white-space:nowrap;max-width:96vw;
+  letter-spacing:.01em;color:var(--ink);
+}
+
+.sign-footer{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:14px;width:100%;margin-top:4px}
+.footer-divider{max-width:min(56vw,440px)}
+.sign-service{
+  font-family:var(--serif);font-weight:700;letter-spacing:.03em;
+  font-size:clamp(52px,9.5vw,86px);
+}
+
+.edit{
+  position:absolute;right:calc(28px + env(safe-area-inset-right));bottom:calc(24px + env(safe-area-inset-bottom));
+  height:auto;padding:0;border:0;background:transparent;
+  color:var(--muted);font-family:var(--serif);font-style:italic;font-size:13px;letter-spacing:.02em;
+  border-bottom:1px solid transparent;transition:color .2s ease,border-color .2s ease;
+}
+.edit:active{color:var(--gold-dim);border-color:var(--line)}
+
+@media (orientation:landscape){
+  .setup{padding-top:calc(18px + env(safe-area-inset-top))}
+  .logo-mark{width:88px;height:88px}
+  .brand{font-size:32px}
+  .header-divider{margin-top:10px}
+  .sign{padding-top:calc(18px + env(safe-area-inset-top));padding-bottom:calc(16px + env(safe-area-inset-bottom))}
+  .sign-site{font-size:32px}
+  .name-wrap{gap:14px}
+  .sign-footer{gap:8px;margin-top:0}
+  .sign-service{font-size:38px}
+}
+@media (prefers-reduced-motion:reduce){
+  .sign,.client,.primary,.seg-btn,.seg-btn::after,.input-wrap{transition:none!important}
+}
+</style>
+</head>
+<body>
+<main class="setup" id="setup">
+  <div class="frame" aria-hidden="true"></div>
+  <section class="card" aria-label="Préparer une pancarte client">
+    <div class="header-line">
+      <svg class="logo-mark" viewBox="0 0 100 100" aria-hidden="true">
+        <defs>
+          <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ecd39a"/>
+            <stop offset="45%" stop-color="#b8903f"/>
+            <stop offset="75%" stop-color="#8f6f30"/>
+            <stop offset="100%" stop-color="#ecd39a"/>
+          </linearGradient>
+        </defs>
+        <text class="letter-r" x="36" y="72" font-size="62" text-anchor="middle">R</text>
+        <text class="letter-f" x="64" y="74" font-size="52" text-anchor="middle">F</text>
+      </svg>
+      <div class="brand gold-grad">rfdriver.fr</div>
+    </div>
+    <div class="divider header-divider" aria-hidden="true"><span class="divider-dot"></span></div>
+
+    <div class="field">
+      <label class="label" id="civLabel">Civilité</label>
+      <div class="seg" id="seg" role="group" aria-labelledby="civLabel">
+        <button type="button" class="seg-btn active" data-civ="M.">Monsieur</button>
+        <button type="button" class="seg-btn" data-civ="Mme">Madame</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="label" for="name">Nom du client</label>
+      <div class="input-wrap">
+        <input id="name" type="text" inputmode="text" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="Dupont" maxlength="40">
+      </div>
+    </div>
+
+    <button class="primary" id="display" type="button">Afficher la pancarte</button>
+    <div class="hint">Le nom s'adapte automatiquement à la largeur de l'écran.</div>
+  </section>
+</main>
+
+<section class="sign" id="sign" aria-live="polite">
+  <div class="frame" aria-hidden="true"></div>
+  <div class="sign-top">
+    <div class="header-line">
+      <svg class="logo-mark" viewBox="0 0 100 100" aria-hidden="true">
+        <text class="letter-r" x="36" y="72" font-size="62" text-anchor="middle">R</text>
+        <text class="letter-f" x="64" y="74" font-size="52" text-anchor="middle">F</text>
+      </svg>
+      <div class="sign-site gold-grad">rfdriver.fr</div>
+    </div>
+    <div class="divider header-divider" aria-hidden="true"><span class="divider-dot"></span></div>
+  </div>
+  <div class="name-wrap" id="nameWrap">
+    <div class="client" id="client">M. Dupont</div>
+  </div>
+  <div class="sign-footer">
+    <div class="divider footer-divider" aria-hidden="true"><span class="divider-dot"></span></div>
+    <div class="sign-service gold-grad">Chauffeur privé</div>
+  </div>
+  <button class="edit" id="edit" type="button">Changer le client</button>
+</section>
+
+<script>
+(()=>{
+let civ='M.';
+const input=document.getElementById('name'),
+      sign=document.getElementById('sign'),
+      client=document.getElementById('client'),
+      nameWrap=document.getElementById('nameWrap');
+
+const buttons=[...document.querySelectorAll('[data-civ]')];
+buttons.forEach(b=>b.addEventListener('click',()=>{
+  civ=b.dataset.civ;
+  buttons.forEach(x=>x.classList.toggle('active',x===b));
+  input.focus();
+}));
+
+function toTitleCase(s){
+  return s.toLocaleLowerCase('fr-FR').replace(/(^|[\s-])\p{L}/gu,c=>c.toLocaleUpperCase('fr-FR'));
+}
+
+function fit(){
+  const maxW=nameWrap.clientWidth*.94,maxH=nameWrap.clientHeight*.8;
+  let size=maxH;
+  client.style.fontSize=size+'px';
+  while(size>34&&(client.scrollWidth>maxW||client.scrollHeight>maxH)){
+    size-=2;client.style.fontSize=size+'px';
+  }
+}
+
+function show(){
+  const n=input.value.trim().replace(/\s+/g,' ');
+  if(!n){input.focus();return}
+  const label=civ==='M.'?'M.':'Mme';
+  client.textContent=label+' '+toTitleCase(n);
+  sign.classList.add('show');
+  requestAnimationFrame(fit);
+}
+
+document.getElementById('display').addEventListener('click',show);
+input.addEventListener('keydown',e=>{if(e.key==='Enter')show()});
+document.getElementById('edit').addEventListener('click',()=>{
+  sign.classList.remove('show');
+  input.select();
+});
+window.addEventListener('resize',()=>{if(sign.classList.contains('show'))requestAnimationFrame(fit)});
+})();
+</script>
+</body>
+</html>
